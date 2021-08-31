@@ -1,0 +1,70 @@
+version: '2'
+services:
+  zookeeper:
+    image: debezium/zookeeper:1.2
+    ports:
+     - 2181:2181
+     - 2888:2888
+     - 3888:3888
+  kafka:
+    image: debezium/kafka:1.2
+    ports:
+     - 9092:9092
+    links:
+     - zookeeper
+    environment:
+     - ZOOKEEPER_CONNECT=zookeeper:2181
+  registry:
+    image: confluentinc/cp-schema-registry:5.3.1
+    hostname: schema-registry
+    container_name: schema-registry
+    depends_on:
+      - zookeeper
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
+  src:
+    image: postgres:11.8
+    ports:
+     - 5432:5432
+    environment:
+     - POSTGRES_USER=postgres
+     - POSTGRES_PASSWORD=postgres
+    volumes:
+     - "./data/src:/var/lib/postgresql/data"
+     - "./initdb.d-src:/docker-entrypoint-initdb.d:ro"
+  connect:
+    build: connect
+    ports:
+     - 8083:8083
+    links:
+     - kafka
+     - src
+    environment:
+     - CONNECT_BOOTSTRAP_SERVERS=kafka:9092
+     - CONNECT_REST_ADVERTISED_HOST_NAME=connect
+     - CONNECT_GROUP_ID=compose-connect-group
+     - CONNECT_CONFIG_STORAGE_TOPIC=connect_configs
+     - CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=1
+     - CONNECT_OFFSET_STORAGE_TOPIC=connect_offsets
+     - CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=1
+     - CONNECT_STATUS_STORAGE_TOPIC=connect_statuses
+     - CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=1
+     - CONNECT_KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
+     - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://registry:8081
+     - CONNECT_VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
+     - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://registry:8081
+  dst:
+    image: postgres:11.8
+    ports:
+     - 5433:5432
+    environment:
+     - POSTGRES_USER=postgres
+     - POSTGRES_PASSWORD=postgres
+    volumes:
+     - "./data/dst:/var/lib/postgresql/data"
+     - "./initdb.d-dst:/docker-entrypoint-initdb.d:ro"
+
