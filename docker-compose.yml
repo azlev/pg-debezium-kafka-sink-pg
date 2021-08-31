@@ -26,7 +26,7 @@ services:
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
-  src:
+  postgres:
     image: postgres:11.8
     ports:
      - 5432:5432
@@ -34,15 +34,15 @@ services:
      - POSTGRES_USER=postgres
      - POSTGRES_PASSWORD=postgres
     volumes:
-     - "./data/src:/var/lib/postgresql/data"
-     - "./initdb.d-src:/docker-entrypoint-initdb.d:ro"
+     - "./data/postgres:/var/lib/postgresql/data"
+     - "./initdb.d:/docker-entrypoint-initdb.d:ro"
   connect:
     build: connect
     ports:
      - 8083:8083
     links:
      - kafka
-     - src
+     - postgres
     environment:
      - CONNECT_BOOTSTRAP_SERVERS=kafka:9092
      - CONNECT_REST_ADVERTISED_HOST_NAME=connect
@@ -57,14 +57,4 @@ services:
      - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://registry:8081
      - CONNECT_VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
      - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://registry:8081
-  dst:
-    image: postgres:11.8
-    ports:
-     - 5433:5432
-    environment:
-     - POSTGRES_USER=postgres
-     - POSTGRES_PASSWORD=postgres
-    volumes:
-     - "./data/dst:/var/lib/postgresql/data"
-     - "./initdb.d-dst:/docker-entrypoint-initdb.d:ro"
 

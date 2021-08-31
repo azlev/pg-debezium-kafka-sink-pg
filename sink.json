@@ -2,7 +2,7 @@
   "name": "sink",
   "config": {
     "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
-    "connection.url": "jdbc:postgresql://dst:5432/postgres",
+    "connection.url": "jdbc:postgresql://postgres:5432/destination",
     "connection.user": "postgres",
     "connection.password": "postgres",
     "topics": "postgres.public.shares",
@@ -14,9 +14,12 @@
     "pk.fields": "id",
     "auto.create": true,
     "auto.evolve": true,
-    "transforms": "unwrap",
+    "transforms": "unwrap,droptopicprefix",
     "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState", 
     "transforms.unwrap.drop.tombstones": "false",
+    "transforms.droptopicprefix.type": "org.apache.kafka.connect.transforms.RegexRouter",
+    "transforms.droptopicprefix.regex": "postgres\\.(.*)",
+    "transforms.droptopicprefix.replacement": "$1",
     "insert.mode": "upsert",
     "delete.enabled": "true"
   }
