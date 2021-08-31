@@ -17,6 +17,7 @@
     "transforms": "unwrap",
     "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState", 
     "transforms.unwrap.drop.tombstones": "false",
-    "insert.mode": "upsert"
+    "insert.mode": "upsert",
+    "delete.enabled": "true"
   }
 }
